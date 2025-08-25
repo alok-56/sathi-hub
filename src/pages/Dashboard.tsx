@@ -10,8 +10,10 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  IndianRupee
 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const stats = [
   {
@@ -31,19 +33,19 @@ const stats = [
     color: "text-green-600"
   },
   {
-    title: "Total Revenue",
+    title: "Total Earnings",
     value: "₹5,67,890",
     change: "+23%",
     trend: "up",
-    icon: DollarSign,
+    icon: IndianRupee,
     color: "text-emerald-600"
   },
   {
-    title: "Active Mechanics",
-    value: "89",
-    change: "+5%",
+    title: "Today Earnings",
+    value: "₹12,450",
+    change: "+15%",
     trend: "up",
-    icon: Wrench,
+    icon: DollarSign,
     color: "text-orange-600"
   }
 ];

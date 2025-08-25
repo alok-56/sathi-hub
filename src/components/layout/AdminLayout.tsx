@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AdminLayout() {
   return (
@@ -22,6 +23,7 @@ export function AdminLayout() {
             </div>
             
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button variant="ghost" size="sm" className="gap-2">
                 <User className="w-4 h-4" />
                 Profile
