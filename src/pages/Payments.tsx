@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationComponent } from "@/components/PaginationComponent";
+import { usePagination } from "@/hooks/usePagination";
 import { 
   Search, 
   CreditCard, 
@@ -136,6 +138,20 @@ export default function Payments() {
     
     return matchesSearch && matchesStatus && matchesMethod;
   });
+
+  const { 
+    currentPage, 
+    totalPages, 
+    paginatedData, 
+    goToPage, 
+    hasNextPage, 
+    hasPreviousPage 
+  } = usePagination({
+    totalItems: filteredPayments.length,
+    itemsPerPage: 10
+  });
+
+  const currentPayments = filteredPayments.slice(paginatedData.startIndex, paginatedData.endIndex);
 
   const totalAmount = filteredPayments.reduce((sum, payment) => {
     return sum + parseFloat(payment.amount.replace('₹', '').replace(',', ''));
@@ -284,7 +300,7 @@ export default function Payments() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.map((payment) => (
+                {currentPayments.map((payment) => (
                   <TableRow key={payment.id} className="hover:bg-muted/30">
                     <TableCell className="font-medium">{payment.id}</TableCell>
                     <TableCell>
@@ -311,6 +327,13 @@ export default function Payments() {
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
         </CardContent>
       </Card>
     </div>

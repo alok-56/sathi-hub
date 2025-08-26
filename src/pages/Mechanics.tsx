@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationComponent } from "@/components/PaginationComponent";
+import { usePagination } from "@/hooks/usePagination";
+import { MechanicDetailsModal } from "@/components/modals/MechanicDetailsModal";
 import { 
   Search, 
   Wrench, 
@@ -16,7 +19,9 @@ import {
   MapPin,
   Phone,
   Download,
-  Clock
+  Clock,
+  Ban,
+  Trash2
 } from "lucide-react";
 
 const mechanics = [
@@ -117,8 +122,11 @@ const getStatusBadge = (status: string) => {
 export default function Mechanics() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedMechanic, setSelectedMechanic] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [mechanicsData, setMechanicsData] = useState(mechanics);
 
-  const filteredMechanics = mechanics.filter(mechanic => {
+  const filteredMechanics = mechanicsData.filter(mechanic => {
     const matchesSearch = mechanic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          mechanic.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          mechanic.location.toLowerCase().includes(searchTerm.toLowerCase());
@@ -128,12 +136,45 @@ export default function Mechanics() {
     return matchesSearch && matchesStatus;
   });
 
+  const { 
+    currentPage, 
+    totalPages, 
+    paginatedData, 
+    goToPage, 
+    hasNextPage, 
+    hasPreviousPage 
+  } = usePagination({
+    totalItems: filteredMechanics.length,
+    itemsPerPage: 10
+  });
+
+  const currentMechanics = filteredMechanics.slice(paginatedData.startIndex, paginatedData.endIndex);
+
+  const handleViewDetails = (mechanic: any) => {
+    setSelectedMechanic(mechanic);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleBlockMechanic = (mechanicId: string) => {
+    setMechanicsData(prev => prev.map(mechanic => 
+      mechanic.id === mechanicId ? { ...mechanic, status: 'blocked' } : mechanic
+    ));
+  };
+
+  const handleDeleteMechanic = (mechanicId: string) => {
+    setMechanicsData(prev => prev.filter(mechanic => mechanic.id !== mechanicId));
+  };
+
   const handleApprove = (mechanicId: string) => {
-    console.log("Approve mechanic:", mechanicId);
+    setMechanicsData(prev => prev.map(mechanic => 
+      mechanic.id === mechanicId ? { ...mechanic, status: 'approved' } : mechanic
+    ));
   };
 
   const handleReject = (mechanicId: string) => {
-    console.log("Reject mechanic:", mechanicId);
+    setMechanicsData(prev => prev.map(mechanic => 
+      mechanic.id === mechanicId ? { ...mechanic, status: 'rejected' } : mechanic
+    ));
   };
 
   return (
@@ -207,7 +248,7 @@ export default function Mechanics() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMechanics.map((mechanic) => (
+                {currentMechanics.map((mechanic) => (
                   <TableRow key={mechanic.id} className="hover:bg-muted/30">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -254,8 +295,8 @@ export default function Mechanics() {
                     </TableCell>
                     <TableCell>{getStatusBadge(mechanic.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" title="View Details">
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(mechanic)} title="View Details">
                           <Eye className="w-4 h-4" />
                         </Button>
                         {mechanic.status === 'pending' && (
@@ -280,6 +321,28 @@ export default function Mechanics() {
                             </Button>
                           </>
                         )}
+                        {mechanic.status === 'approved' && (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleBlockMechanic(mechanic.id)}
+                              className="text-warning hover:text-warning"
+                              title="Block"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDeleteMechanic(mechanic.id)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -287,8 +350,24 @@ export default function Mechanics() {
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
         </CardContent>
       </Card>
+
+      {/* Mechanic Details Modal */}
+      <MechanicDetailsModal
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        mechanic={selectedMechanic}
+        onBlock={() => selectedMechanic && handleBlockMechanic(selectedMechanic.id)}
+        onDelete={() => selectedMechanic && handleDeleteMechanic(selectedMechanic.id)}
+      />
     </div>
   );
 }

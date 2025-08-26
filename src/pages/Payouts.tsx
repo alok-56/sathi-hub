@@ -233,7 +233,7 @@ export default function Payouts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayouts.map((payout) => (
+                {currentPayouts.map((payout) => (
                   <TableRow key={payout.id} className="hover:bg-muted/30">
                     <TableCell className="font-medium">{payout.id}</TableCell>
                     <TableCell>
@@ -278,6 +278,13 @@ export default function Payouts() {
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
         </CardContent>
       </Card>
     </div>

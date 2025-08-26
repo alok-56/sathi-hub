@@ -22,15 +22,15 @@ const stats = [
     change: "+12%",
     trend: "up",
     icon: Users,
-    color: "text-blue-600"
+    color: "text-primary"
   },
   {
-    title: "Active Bookings",
-    value: "156",
-    change: "+8%",
+    title: "Total Bookings",
+    value: "1,234",
+    change: "+18%",
     trend: "up",
     icon: Calendar,
-    color: "text-green-600"
+    color: "text-success"
   },
   {
     title: "Total Earnings",
@@ -38,7 +38,7 @@ const stats = [
     change: "+23%",
     trend: "up",
     icon: IndianRupee,
-    color: "text-emerald-600"
+    color: "text-info"
   },
   {
     title: "Today Earnings",
@@ -46,8 +46,29 @@ const stats = [
     change: "+15%",
     trend: "up",
     icon: DollarSign,
-    color: "text-orange-600"
+    color: "text-warning"
   }
+];
+
+// Sample data for charts
+const bookingData = [
+  { day: 'Mon', bookings: 45, earnings: 12500 },
+  { day: 'Tue', bookings: 52, earnings: 14200 },
+  { day: 'Wed', bookings: 38, earnings: 9800 },
+  { day: 'Thu', bookings: 61, earnings: 16700 },
+  { day: 'Fri', bookings: 55, earnings: 15200 },
+  { day: 'Sat', bookings: 67, earnings: 18900 },
+  { day: 'Sun', bookings: 42, earnings: 11300 }
+];
+
+const earningsData = [
+  { day: 'Mon', amount: 12500 },
+  { day: 'Tue', amount: 14200 },
+  { day: 'Wed', amount: 9800 },
+  { day: 'Thu', amount: 16700 },
+  { day: 'Fri', amount: 15200 },
+  { day: 'Sat', amount: 18900 },
+  { day: 'Sun', amount: 11300 }
 ];
 
 const recentBookings = [
@@ -128,6 +149,75 @@ export default function Dashboard() {
         ))}
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Day-wise Bookings Chart */}
+        <Card className="border-0 shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Daily Bookings
+            </CardTitle>
+            <CardDescription>Booking trends for the last 7 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bookingData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="day" className="text-muted-foreground" />
+                  <YAxis className="text-muted-foreground" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Bar dataKey="bookings" fill="hsl(var(--primary))" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Day-wise Earnings Chart */}
+        <Card className="border-0 shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <IndianRupee className="w-5 h-5" />
+              Daily Earnings
+            </CardTitle>
+            <CardDescription>Earnings trends for the last 7 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={earningsData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="day" className="text-muted-foreground" />
+                  <YAxis className="text-muted-foreground" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="amount" 
+                    stroke="hsl(var(--success))" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Bookings & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Bookings */}
         <Card className="border-0 shadow-md">

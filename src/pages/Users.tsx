@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationComponent } from "@/components/PaginationComponent";
+import { usePagination } from "@/hooks/usePagination";
+import { CreateUserModal } from "@/components/modals/CreateUserModal";
+import { EditUserModal } from "@/components/modals/EditUserModal";
 import { 
   Search, 
   Users as UsersIcon, 
@@ -15,7 +19,9 @@ import {
   UserX,
   Download,
   Phone,
-  Mail
+  Mail,
+  Plus,
+  Edit
 } from "lucide-react";
 
 const users = [
@@ -105,21 +111,54 @@ const getStatusBadge = (status: string) => {
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [usersData, setUsersData] = useState(users);
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = usersData.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const { 
+    currentPage, 
+    totalPages, 
+    paginatedData, 
+    goToPage, 
+    hasNextPage, 
+    hasPreviousPage 
+  } = usePagination({
+    totalItems: filteredUsers.length,
+    itemsPerPage: 10
+  });
+
+  const currentUsers = filteredUsers.slice(paginatedData.startIndex, paginatedData.endIndex);
+
+  const handleCreateUser = (newUser: any) => {
+    setUsersData(prev => [...prev, newUser]);
+  };
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveUser = (updatedUser: any) => {
+    setUsersData(prev => prev.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    ));
+  };
+
   const handleBlockUser = (userId: string) => {
-    // Handle block user logic
-    console.log("Block user:", userId);
+    setUsersData(prev => prev.map(user => 
+      user.id === userId ? { ...user, status: user.status === 'blocked' ? 'active' : 'blocked' } : user
+    ));
   };
 
   const handleDeleteUser = (userId: string) => {
-    // Handle delete user logic
-    console.log("Delete user:", userId);
+    setUsersData(prev => prev.filter(user => user.id !== userId));
   };
 
   return (
@@ -130,10 +169,16 @@ export default function Users() {
           <h1 className="text-3xl font-bold text-foreground">Users</h1>
           <p className="text-muted-foreground mt-1">Manage customer accounts and profiles</p>
         </div>
-        <Button className="bg-gradient-to-r from-primary to-primary-hover">
-          <Download className="w-4 h-4 mr-2" />
-          Export Users
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsCreateModalOpen(true)} className="bg-gradient-to-r from-primary to-primary-hover">
+            <Plus className="w-4 h-4 mr-2" />
+            Create User
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export Users
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -176,7 +221,7 @@ export default function Users() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {currentUsers.map((user) => (
                   <TableRow key={user.id} className="hover:bg-muted/30">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -214,9 +259,17 @@ export default function Users() {
                     <TableCell className="font-semibold">{user.totalSpent}</TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" title="View Details">
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEditUser(user)}
+                          title="Edit User"
+                        >
+                          <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -243,8 +296,29 @@ export default function Users() {
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <CreateUserModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSave={handleCreateUser}
+      />
+
+      <EditUserModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        user={selectedUser}
+        onSave={handleSaveUser}
+      />
     </div>
   );
 }

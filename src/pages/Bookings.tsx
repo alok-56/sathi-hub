@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationComponent } from "@/components/PaginationComponent";
+import { usePagination } from "@/hooks/usePagination";
+import { BookingDetailsModal } from "@/components/modals/BookingDetailsModal";
+import { EditBookingModal } from "@/components/modals/EditBookingModal";
 import { 
   Search, 
   Filter, 
   Eye, 
+  Edit,
   Calendar,
   Clock,
   CheckCircle,
@@ -115,8 +120,12 @@ const getStatusBadge = (status: string) => {
 export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [bookingsData, setBookingsData] = useState(bookings);
 
-  const filteredBookings = bookings.filter(booking => {
+  const filteredBookings = bookingsData.filter(booking => {
     const matchesSearch = booking.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          booking.vehicle.toLowerCase().includes(searchTerm.toLowerCase());
@@ -125,6 +134,36 @@ export default function Bookings() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const { 
+    currentPage, 
+    totalPages, 
+    paginatedData, 
+    goToPage, 
+    hasNextPage, 
+    hasPreviousPage 
+  } = usePagination({
+    totalItems: filteredBookings.length,
+    itemsPerPage: 10
+  });
+
+  const currentBookings = filteredBookings.slice(paginatedData.startIndex, paginatedData.endIndex);
+
+  const handleViewDetails = (booking: any) => {
+    setSelectedBooking(booking);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEditBooking = () => {
+    setIsDetailsModalOpen(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveBooking = (updatedBooking: any) => {
+    setBookingsData(prev => prev.map(booking => 
+      booking.id === updatedBooking.id ? updatedBooking : booking
+    ));
+  };
 
   return (
     <div className="space-y-6">
@@ -199,7 +238,7 @@ export default function Bookings() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBookings.map((booking) => (
+                {currentBookings.map((booking) => (
                   <TableRow key={booking.id} className="hover:bg-muted/30">
                     <TableCell className="font-medium">{booking.id}</TableCell>
                     <TableCell>
@@ -228,17 +267,44 @@ export default function Bookings() {
                     <TableCell className="font-semibold">{booking.amount}</TableCell>
                     <TableCell>{getStatusBadge(booking.status)}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(booking)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(booking)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <BookingDetailsModal
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        booking={selectedBooking}
+        onEdit={handleEditBooking}
+      />
+
+      <EditBookingModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        booking={selectedBooking}
+        onSave={handleSaveBooking}
+      />
     </div>
   );
 }
