@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationComponent } from "@/components/PaginationComponent";
 import { 
   Search, 
   DollarSign, 
@@ -101,6 +103,14 @@ export default function Payouts() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination
+  const { currentPage, totalPages, paginatedData, goToPage, hasNextPage, hasPreviousPage } = usePagination({
+    totalItems: filteredPayouts.length,
+    itemsPerPage: 10
+  });
+
+  const currentPayouts = filteredPayouts.slice(paginatedData.startIndex, paginatedData.endIndex);
 
   const totalAmount = filteredPayouts.reduce((sum, payout) => {
     return sum + parseFloat(payout.netAmount.replace('₹', '').replace(',', ''));

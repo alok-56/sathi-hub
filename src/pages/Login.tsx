@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Lock, Mail } from "lucide-react";
+import { Car, Lock, Mail, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,9 +19,10 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
-      if (email && password) {
+    try {
+      const response = await authService.login({ email, password });
+      
+      if (response.status) {
         toast({
           title: "Login Successful",
           description: "Welcome to Vehicle Sathi Admin Panel",
@@ -28,13 +30,21 @@ export default function Login() {
         navigate("/dashboard");
       } else {
         toast({
-          title: "Login Failed",
-          description: "Please check your credentials",
+          title: "Login Failed", 
+          description: response.message || "Invalid credentials",
           variant: "destructive",
         });
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: "Unable to connect to server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -60,7 +70,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@vehiclesathi.com"
+                placeholder="admin@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -89,7 +99,14 @@ export default function Login() {
               className="w-full h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary" 
               disabled={isLoading}
             >
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
           

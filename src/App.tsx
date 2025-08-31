@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Layout Components
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -39,38 +41,115 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Protected Admin Routes */}
-          <Route path="/" element={<AdminLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="bookings" element={<Bookings />} />
-            <Route path="users" element={<Users />} />
-            <Route path="mechanics" element={<Mechanics />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="payouts" element={<Payouts />} />
-            <Route path="notifications" element={<Notifications />} />
-            
-            {/* Services Routes */}
-            <Route path="services/sos" element={<SOSServices />} />
-            <Route path="services/regular" element={<RegularServices />} />
-            <Route path="services/parts" element={<Parts />} />
-            
-            {/* Master Routes */}
-            <Route path="master/slots" element={<Slots />} />
-            <Route path="master/vehicle-models" element={<VehicleModels />} />
-            <Route path="master/config" element={<AppConfig />} />
-          </Route>
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </ThemeProvider>
+          <AuthProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Login />} />
+              
+              {/* Protected Admin Routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Dashboard />} />
+              </Route>
+              <Route path="/bookings" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Bookings />} />
+              </Route>
+              <Route path="/users" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Users />} />
+              </Route>
+              <Route path="/mechanics" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Mechanics />} />
+              </Route>
+              <Route path="/payments" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Payments />} />
+              </Route>
+              <Route path="/payouts" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Payouts />} />
+              </Route>
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Notifications />} />
+              </Route>
+              
+              {/* Services Routes */}
+              <Route path="/services/sos" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<SOSServices />} />
+              </Route>
+              <Route path="/services/regular" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<RegularServices />} />
+              </Route>
+              <Route path="/services/parts" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Parts />} />
+              </Route>
+              
+              {/* Master Routes */}
+              <Route path="/master/slots" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Slots />} />
+              </Route>
+              <Route path="/master/vehicle-models" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<VehicleModels />} />
+              </Route>
+              <Route path="/master/config" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AppConfig />} />
+              </Route>
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
