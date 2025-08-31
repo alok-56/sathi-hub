@@ -28,50 +28,9 @@ const configSections = [
       { key: "support_phone", label: "Support Phone", value: "+91 80000 12345", type: "tel" }
     ]
   },
-  {
-    id: "pricing",
-    title: "Pricing & Commission",
-    icon: DollarSign,
-    settings: [
-      { key: "platform_commission", label: "Platform Commission (%)", value: "15", type: "number" },
-      { key: "min_booking_amount", label: "Minimum Booking Amount (₹)", value: "500", type: "number" },
-      { key: "cancellation_fee", label: "Cancellation Fee (₹)", value: "100", type: "number" },
-      { key: "gst_percentage", label: "GST Percentage (%)", value: "18", type: "number" }
-    ]
-  },
-  {
-    id: "booking",
-    title: "Booking Configuration", 
-    icon: Clock,
-    settings: [
-      { key: "advance_booking_days", label: "Advance Booking (Days)", value: "7", type: "number" },
-      { key: "cancellation_hours", label: "Cancellation Allowed (Hours)", value: "24", type: "number" },
-      { key: "slot_duration", label: "Default Slot Duration (Minutes)", value: "60", type: "number" },
-      { key: "buffer_time", label: "Buffer Time Between Slots (Minutes)", value: "15", type: "number" }
-    ]
-  },
-  {
-    id: "location",
-    title: "Location Settings",
-    icon: MapPin,
-    settings: [
-      { key: "service_radius", label: "Service Radius (KM)", value: "25", type: "number" },
-      { key: "default_city", label: "Default City", value: "Mumbai", type: "text" },
-      { key: "covered_cities", label: "Covered Cities", value: "Mumbai, Delhi, Bangalore, Pune", type: "textarea" }
-    ]
-  }
+  
 ];
 
-const featureTogles = [
-  { key: "sos_service", label: "SOS Services", description: "Enable emergency breakdown services", enabled: true },
-  { key: "doorstep_service", label: "Doorstep Service", description: "Enable doorstep vehicle services", enabled: true },
-  { key: "online_payment", label: "Online Payments", description: "Enable online payment options", enabled: true },
-  { key: "cash_payment", label: "Cash Payments", description: "Enable cash payment option", enabled: true },
-  { key: "push_notifications", label: "Push Notifications", description: "Send push notifications to users", enabled: true },
-  { key: "sms_notifications", label: "SMS Notifications", description: "Send SMS notifications", enabled: false },
-  { key: "email_notifications", label: "Email Notifications", description: "Send email notifications", enabled: true },
-  { key: "mechanic_verification", label: "Mechanic Verification", description: "Require admin approval for mechanics", enabled: true }
-];
 
 export default function AppConfig() {
   const [activeSection, setActiveSection] = useState("general");
@@ -173,66 +132,10 @@ export default function AppConfig() {
             </Card>
           )}
 
-          {/* Feature Toggles */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                Feature Toggles
-              </CardTitle>
-              <CardDescription>Enable or disable application features</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {featureTogles.map((feature) => (
-                  <div key={feature.key} className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={feature.key} className="text-sm font-medium">
-                          {feature.label}
-                        </Label>
-                        <Badge variant={feature.enabled ? "default" : "secondary"}>
-                          {feature.enabled ? "Enabled" : "Disabled"}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{feature.description}</p>
-                    </div>
-                    <Switch
-                      id={feature.key}
-                      defaultChecked={feature.enabled}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+         
+          
 
-          {/* System Information */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle>System Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-sm text-muted-foreground">Database Version</Label>
-                  <p className="font-medium">PostgreSQL 14.2</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm text-muted-foreground">API Version</Label>
-                  <p className="font-medium">v2.1.0</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm text-muted-foreground">Last Updated</Label>
-                  <p className="font-medium">2024-01-15 10:30 AM</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-sm text-muted-foreground">Environment</Label>
-                  <Badge className="bg-success-light text-success border-success/20">Production</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </div>
     </div>
