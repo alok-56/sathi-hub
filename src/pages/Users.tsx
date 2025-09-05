@@ -1,165 +1,244 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationComponent } from "@/components/PaginationComponent";
-import { usePagination } from "@/hooks/usePagination";
-import { CreateUserModal } from "@/components/modals/CreateUserModal";
-import { EditUserModal } from "@/components/modals/EditUserModal";
-import { 
-  Search, 
-  Users as UsersIcon, 
-  Eye, 
-  Ban, 
+
+import { User } from "@/types/api";
+import {
+  Search,
+  Users as UsersIcon,
+  Eye,
+  Ban,
   Trash2,
   UserCheck,
   UserX,
   Download,
   Phone,
   Mail,
-  Plus,
-  Edit
+  Wallet,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { userService } from "@/services/users";
+import { ViewUserModal } from "@/components/modals/UserDetailsModal";
 
-const users = [
-  {
-    id: "USR001",
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@email.com",
-    phone: "+91 98765 43210",
-    location: "Mumbai, Maharashtra",
-    joinDate: "2023-12-15",
-    bookings: 12,
-    totalSpent: "₹18,500",
-    status: "active",
-    avatar: "/api/placeholder/40/40"
-  },
-  {
-    id: "USR002",
-    name: "Priya Sharma",
-    email: "priya.sharma@email.com",
-    phone: "+91 87654 32109",
-    location: "Delhi, NCR",
-    joinDate: "2023-11-22",
-    bookings: 8,
-    totalSpent: "₹12,300",
-    status: "active",
-    avatar: "/api/placeholder/40/40"
-  },
-  {
-    id: "USR003",
-    name: "Mohammed Ali",
-    email: "mohammed.ali@email.com",
-    phone: "+91 76543 21098",
-    location: "Bangalore, Karnataka",
-    joinDate: "2023-10-08",
-    bookings: 15,
-    totalSpent: "₹25,600",
-    status: "blocked",
-    avatar: "/api/placeholder/40/40"
-  },
-  {
-    id: "USR004",
-    name: "Sneha Patel",
-    email: "sneha.patel@email.com",
-    phone: "+91 65432 10987",
-    location: "Ahmedabad, Gujarat",
-    joinDate: "2024-01-03",
-    bookings: 3,
-    totalSpent: "₹4,200",
-    status: "active",
-    avatar: "/api/placeholder/40/40"
-  },
-  {
-    id: "USR005",
-    name: "Arjun Reddy",
-    email: "arjun.reddy@email.com",
-    phone: "+91 54321 09876",
-    location: "Hyderabad, Telangana",
-    joinDate: "2023-09-18",
-    bookings: 20,
-    totalSpent: "₹32,800",
-    status: "inactive",
-    avatar: "/api/placeholder/40/40"
-  }
-];
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'active':
-      return <Badge className="bg-success-light text-success border-success/20">
-        <UserCheck className="w-3 h-3 mr-1" />
-        Active
-      </Badge>;
-    case 'blocked':
-      return <Badge className="bg-destructive-light text-destructive border-destructive/20">
+const getStatusBadge = (isBlocked: boolean, status?: string) => {
+  if (isBlocked) {
+    return (
+      <Badge className="bg-destructive-light text-destructive border-destructive/20">
         <UserX className="w-3 h-3 mr-1" />
         Blocked
-      </Badge>;
-    case 'inactive':
-      return <Badge className="bg-muted text-muted-foreground border-muted-foreground/20">
-        <UserX className="w-3 h-3 mr-1" />
-        Inactive
-      </Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
+      </Badge>
+    );
   }
+
+  return (
+    <Badge className="bg-success-light text-success border-success/20">
+      <UserCheck className="w-3 h-3 mr-1" />
+      Active
+    </Badge>
+  );
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 0,
+  }).format(amount);
 };
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [usersData, setUsersData] = useState(users);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isPayLoyaltyModalOpen, setIsPayLoyaltyModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [usersData, setUsersData] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filteredUsers = usersData.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const itemsPerPage = 10;
+
+  // Load users from API
+  const loadUsers = async (page: number = 1) => {
+    try {
+      setLoading(true);
+      const response = await userService.getUsers({
+        page,
+        limit: itemsPerPage,
+      });
+
+      if (response.status) {
+        setUsersData(response.data);
+        setCurrentPage(response.currentPage);
+        setTotalPages(response.totalPages);
+        setTotalUsers(response.totalUsers);
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+      toast.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  // Filter users locally (since API doesn't seem to have search endpoint)
+  const filteredUsers = usersData.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user._id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const { 
-    currentPage, 
-    totalPages, 
-    paginatedData, 
-    goToPage, 
-    hasNextPage, 
-    hasPreviousPage 
-  } = usePagination({
-    totalItems: filteredUsers.length,
-    itemsPerPage: 10
-  });
-
-  const currentUsers = filteredUsers.slice(paginatedData.startIndex, paginatedData.endIndex);
-
-  const handleCreateUser = (newUser: any) => {
-    setUsersData(prev => [...prev, newUser]);
-  };
-
-  const handleEditUser = (user: any) => {
+  const handleViewUser = (user: User) => {
     setSelectedUser(user);
-    setIsEditModalOpen(true);
+    setIsViewModalOpen(true);
   };
 
-  const handleSaveUser = (updatedUser: any) => {
-    setUsersData(prev => prev.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
+  const handlePayLoyalty = (user: User) => {
+    setSelectedUser(user);
+    setIsPayLoyaltyModalOpen(true);
   };
 
-  const handleBlockUser = (userId: string) => {
-    setUsersData(prev => prev.map(user => 
-      user.id === userId ? { ...user, status: user.status === 'blocked' ? 'active' : 'blocked' } : user
-    ));
+  const handleBlockUser = async (userId: string) => {
+    try {
+      setActionLoading(userId);
+      const response = await userService.toggleBlockUser(userId);
+
+      if (response.status) {
+        setUsersData((prev) =>
+          prev.map((user) =>
+            user._id === userId ? { ...user, isBlocked: !user.isBlocked } : user
+          )
+        );
+
+        const user = usersData.find((u) => u._id === userId);
+        const action = user?.isBlocked ? "unblocked" : "blocked";
+        toast.success(`User ${action} successfully`);
+      }
+    } catch (error) {
+      console.error("Error toggling user block status:", error);
+      toast.error("Failed to update user status");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsersData(prev => prev.filter(user => user.id !== userId));
+  const handleDeleteUser = async (userId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this user? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setActionLoading(userId);
+      const response = await userService.deleteUser(userId);
+
+      if (response.status) {
+        // Remove from local state
+        setUsersData((prev) => prev.filter((user) => user._id !== userId));
+        toast.success("User deleted successfully");
+
+        // If current page becomes empty, go to previous page
+        if (filteredUsers.length === 1 && currentPage > 1) {
+          loadUsers(currentPage - 1);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete user");
+    } finally {
+      setActionLoading(null);
+    }
   };
+
+  const handlePageChange = (page: number) => {
+    loadUsers(page);
+  };
+
+  const handleExportUsers = () => {
+    // Create CSV content
+    const csvHeaders = [
+      "ID",
+      "Name",
+      "Email",
+      "Phone",
+      "Vehicle Types",
+      "Wallet Amount",
+      "Status",
+      "Join Date",
+    ];
+    const csvRows = usersData.map((user) => [
+      user._id,
+      user.name,
+      user.email,
+      user.phone_number,
+      user.vehicle_type.join("; "),
+      user.wallet_amount,
+      user.isBlocked ? "Blocked" : "Active",
+      formatDate(user.createdAt),
+    ]);
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users_export_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Users exported successfully");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -167,14 +246,12 @@ export default function Users() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Users</h1>
-          <p className="text-muted-foreground mt-1">Manage customer accounts and profiles</p>
+          <p className="text-muted-foreground mt-1">
+            Manage customer accounts and profiles
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsCreateModalOpen(true)} className="bg-gradient-to-r from-primary to-primary-hover">
-            <Plus className="w-4 h-4 mr-2" />
-            Create User
-          </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportUsers}>
             <Download className="w-4 h-4 mr-2" />
             Export Users
           </Button>
@@ -201,7 +278,7 @@ export default function Users() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UsersIcon className="w-5 h-5" />
-            All Users ({filteredUsers.length})
+            All Users ({searchTerm ? filteredUsers.length : totalUsers})
           </CardTitle>
           <CardDescription>View and manage user accounts</CardDescription>
         </CardHeader>
@@ -212,28 +289,31 @@ export default function Users() {
                 <TableRow className="bg-muted/50">
                   <TableHead>User</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Join Date</TableHead>
-                  <TableHead>Bookings</TableHead>
-                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Vehicle Types</TableHead>
+                  <TableHead>Wallet</TableHead>
+
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-muted/30">
+                {(searchTerm ? filteredUsers : usersData).map((user) => (
+                  <TableRow key={user._id} className="hover:bg-muted/30">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar} alt={user.name} />
                           <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {user.name.split(' ').map(n => n[0]).join('')}
+                            {user.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">{user.id}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {user._id}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -245,49 +325,80 @@ export default function Users() {
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="w-3 h-3 text-muted-foreground" />
-                          {user.phone}
+                          {user.phone_number}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{user.location}</TableCell>
-                    <TableCell className="text-sm">{user.joinDate}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-medium">
-                        {user.bookings}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {user.vehicle_type.map((vehicle, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {vehicle.charAt(0).toUpperCase() + vehicle.slice(1)}
+                          </Badge>
+                        ))}
+                      </div>
                     </TableCell>
-                    <TableCell className="font-semibold">{user.totalSpent}</TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-semibold">
+                          {formatCurrency(user.wallet_amount)}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>{getStatusBadge(user.isBlocked)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" title="View Details">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewUser(user)}
+                          title="View Details"
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleEditUser(user)}
-                          title="Edit User"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePayLoyalty(user)}
+                          title="Pay Loyalty Amount"
+                          className="text-green-600 hover:text-green-700"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Wallet className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleBlockUser(user.id)}
-                          title={user.status === 'blocked' ? "Unblock User" : "Block User"}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleBlockUser(user._id)}
+                          title={user.isBlocked ? "Unblock User" : "Block User"}
                           className="text-warning hover:text-warning"
+                          disabled={actionLoading === user._id}
                         >
-                          <Ban className="w-4 h-4" />
+                          {actionLoading === user._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Ban className="w-4 h-4" />
+                          )}
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDeleteUser(user.id)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user._id)}
                           title="Delete User"
                           className="text-destructive hover:text-destructive"
+                          disabled={actionLoading === user._id}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {actionLoading === user._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -296,29 +407,47 @@ export default function Users() {
               </TableBody>
             </Table>
           </div>
-          <PaginationComponent
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-            hasNextPage={hasNextPage}
-            hasPreviousPage={hasPreviousPage}
-          />
+
+          {/* Show pagination only when not searching */}
+          {!searchTerm && (
+            <PaginationComponent
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              hasNextPage={currentPage < totalPages}
+              hasPreviousPage={currentPage > 1}
+            />
+          )}
+
+          {/* Show message when search has no results */}
+          {searchTerm && filteredUsers.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found matching "{searchTerm}"
+            </div>
+          )}
+
+          {/* Show message when no users exist */}
+          {!searchTerm && usersData.length === 0 && !loading && (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found. Create your first user to get started.
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Modals */}
-      <CreateUserModal
-        open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
-        onSave={handleCreateUser}
+      <ViewUserModal
+        open={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+        user={selectedUser}
       />
 
-      <EditUserModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
+      {/* <PayLoyaltyModal
+        open={isPayLoyaltyModalOpen}
+        onOpenChange={setIsPayLoyaltyModalOpen}
         user={selectedUser}
-        onSave={handleSaveUser}
-      />
+        onSuccess={() => loadUsers(currentPage)}
+      /> */}
     </div>
   );
 }
