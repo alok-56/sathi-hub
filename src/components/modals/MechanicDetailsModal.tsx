@@ -137,7 +137,7 @@ export function MechanicDetailsModal({
             </div>
             <div className="flex items-center gap-2">
               {getStatusBadge(mechanic.status)}
-              <Button onClick={() => onOpenChange(false)} variant="ghost" size="sm">
+              <Button onClick={() => onOpenChange(false)} variant="ghost" size="sm" title="Close">
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -339,38 +339,42 @@ export function MechanicDetailsModal({
               <div className="flex justify-end gap-3 pt-4 border-t">
                 {(mechanic.status === 'pending' || mechanic.status === 'sendforverification' || mechanic.status === 'resendforverification') && (
                   <>
-                    <Button 
-                      onClick={() => handleAction('approve')}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button 
-                      onClick={() => handleAction('reject')}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
+                <Button 
+                  onClick={() => handleAction('approve')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  title="Approve mechanic"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Approve
+                </Button>
+                <Button 
+                  onClick={() => handleAction('reject')}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  title="Reject mechanic"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Reject
+                </Button>
                   </>
                 )}
                 {mechanic.status === 'approve' && (
                   <>
-                    <Button 
-                      onClick={() => handleAction('block')}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      <Ban className="w-4 h-4 mr-2" />
-                      {mechanic.isBlocked ? "Unblock" : "Block"}
-                    </Button>
-                    <Button 
-                      onClick={() => handleAction('delete')}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
+                <Button 
+                  onClick={() => handleAction('block')}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  title={mechanic.isBlocked ? "Unblock mechanic" : "Block mechanic"}
+                >
+                  <Ban className="w-4 h-4 mr-2" />
+                  {mechanic.isBlocked ? "Unblock" : "Block"}
+                </Button>
+                <Button 
+                  onClick={() => handleAction('delete')}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  title="Delete mechanic"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
                   </>
                 )}
               </div>
@@ -389,7 +393,7 @@ export function MechanicDetailsModal({
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder={`Enter remarks for ${actionType}...`}
                   className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="4"
+                  rows={4}
                   required={actionType === 'reject'}
                 />
               </div>
@@ -397,6 +401,7 @@ export function MechanicDetailsModal({
                 <Button 
                   onClick={resetRemarks}
                   variant="outline"
+                  title="Cancel action"
                 >
                   Cancel
                 </Button>
@@ -404,6 +409,7 @@ export function MechanicDetailsModal({
                   onClick={submitWithRemarks}
                   disabled={actionType === 'reject' && !remarks.trim()}
                   className={actionType === 'approve' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+                  title={actionType === 'approve' ? 'Approve mechanic' : 'Reject mechanic'}
                 >
                   {actionType === 'approve' ? 'Approve' : 'Reject'}
                 </Button>

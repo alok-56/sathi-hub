@@ -1,72 +1,155 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  AlertTriangle, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Clock,
-  DollarSign
-} from "lucide-react";
-
-const sosServices = [
-  {
-    id: "SOS001",
-    name: "Emergency Towing",
-    description: "24/7 emergency vehicle towing service",
-    price: "₹1,500",
-    duration: "30 mins",
-    status: "active",
-    createdDate: "2023-12-01"
-  },
-  {
-    id: "SOS002", 
-    name: "Battery Jump Start",
-    description: "Quick battery jump start service",
-    price: "₹500",
-    duration: "15 mins",
-    status: "active",
-    createdDate: "2023-12-01"
-  },
-  {
-    id: "SOS003",
-    name: "Flat Tyre Change",
-    description: "Emergency tyre change assistance",
-    price: "₹800",
-    duration: "20 mins", 
-    status: "active",
-    createdDate: "2023-12-01"
-  },
-  {
-    id: "SOS004",
-    name: "Emergency Fuel",
-    description: "Emergency fuel delivery service",
-    price: "₹300",
-    duration: "25 mins",
-    status: "inactive",
-    createdDate: "2023-11-15"
-  }
-];
-
-const getStatusBadge = (status: string) => {
-  return status === 'active' 
-    ? <Badge className="bg-success-light text-success border-success/20">Active</Badge>
-    : <Badge className="bg-muted text-muted-foreground border-muted-foreground/20">Inactive</Badge>;
-};
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Edit, Trash2, AlertTriangle, Car, Bike } from "lucide-react";
+import { sosService } from "@/services/sosServices";
+import { SOSService } from "@/types/api";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SOSServices() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingService, setEditingService] = useState<SOSService | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [services, setServices] = useState<SOSService[]>([]);
+  const [newService, setNewService] = useState({
+    servicename: "",
+    vehicle_type: "",
+    price: 0,
+    image: ""
+  });
+  
+  const { toast } = useToast();
 
-  const filteredServices = sosServices.filter(service => 
-    service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const loadServices = async () => {
+    try {
+      setLoading(true);
+      const response = await sosService.getSOSServices();
+      setServices(response.data);
+    } catch (error) {
+      console.error('Error loading SOS services:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load SOS services",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadServices();
+  }, []);
+
+  const handleCreateService = async () => {
+    if (!newService.servicename || !newService.vehicle_type || !newService.price) {
+      toast({
+        title: "Error",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      if (editingService) {
+        await sosService.updateSOSService({
+          id: editingService._id,
+          servicename: newService.servicename,
+          vehicle_type: newService.vehicle_type,
+          price: newService.price,
+          image: newService.image
+        });
+        toast({
+          title: "Success",
+          description: "SOS service updated successfully",
+        });
+      } else {
+        await sosService.createSOSService({
+          servicename: newService.servicename,
+          vehicle_type: newService.vehicle_type,
+          price: newService.price,
+          image: newService.image
+        });
+        toast({
+          title: "Success",
+          description: "SOS service created successfully",
+        });
+      }
+      
+      setNewService({ servicename: "", vehicle_type: "", price: 0, image: "" });
+      setEditingService(null);
+      setShowCreateModal(false);
+      loadServices();
+    } catch (error) {
+      console.error('Error saving SOS service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save SOS service",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditService = (service: SOSService) => {
+    setEditingService(service);
+    setNewService({
+      servicename: service.servicename,
+      vehicle_type: service.vehicle_type,
+      price: service.price,
+      image: service.image
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this SOS service?")) return;
+
+    try {
+      await sosService.deleteSOSService(id);
+      toast({
+        title: "Success",
+        description: "SOS service deleted successfully",
+      });
+      loadServices();
+    } catch (error) {
+      console.error('Error deleting SOS service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete SOS service",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getVehicleIcon = (type: string) => {
+    return type === "car" ? <Car className="h-4 w-4" /> : <Bike className="h-4 w-4" />;
+  };
+
+  const getVehicleBadge = (type: string) => {
+    return (
+      <Badge variant={type === "car" ? "default" : "secondary"} className="flex items-center gap-1">
+        {getVehicleIcon(type)}
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+      </Badge>
+    );
+  };
+
+  const filteredServices = services.filter(service =>
+    service.servicename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    service.vehicle_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

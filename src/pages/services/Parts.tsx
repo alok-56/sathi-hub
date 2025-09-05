@@ -21,19 +21,38 @@ export default function Parts() {
   const [preview, setPreview] = useState('');
   const [originalImageUrl, setOriginalImageUrl] = useState('');
 
+  const loadParts = async () => {
+    if (!selectedService) return;
+    try {
+      setLoading(prev => ({ ...prev, page: true }));
+      const response = await partService.getParts(selectedService);
+      setParts(response.data);
+    } catch (error) {
+      console.error('Error loading parts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load parts",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, page: false }));
+    }
+  };
+
+  useEffect(() => {
+    if (selectedService) {
+      loadParts();
+    }
+  }, [selectedService]);
+
   // Fixed: Combined useEffect with proper error handling
   useEffect(() => {
     const initializeData = async () => {
       setLoading(prev => ({ ...prev, page: true }));
       try {
-        // Load both services and parts concurrently
-        const [servicesResponse, partsResponse] = await Promise.all([
-          serviceService.getServices(),
-          partService.getAllParts()
-        ]);
-        
+        // Load services only
+        const servicesResponse = await serviceService.getServices();
         setServices(servicesResponse.data || []);
-        setParts(partsResponse.data || []);
         
         // Set default selected service if available
         if (servicesResponse.data?.length > 0) {
@@ -167,7 +186,7 @@ export default function Parts() {
       const data = {
         serviceId: formData.serviceId,
         partname: formData.partname.trim(),
-        amount: parseFloat(formData.amount),
+        amount: formData.amount,  // Keep as string
         image: imageUrl || '',
         ...(editingPart && { id: editingPart._id })
       };
@@ -192,7 +211,7 @@ export default function Parts() {
           setParts(prev => [...prev, response.data]);
         } else {
           // Fallback: reload all parts
-          await loadAllParts();
+          loadParts();
         }
       }
 
@@ -292,7 +311,7 @@ export default function Parts() {
     setShowForm(false);
     
     // Reset file input
-    const fileInput = document.querySelector('input[type="file"]');
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
     }
@@ -479,10 +498,12 @@ export default function Parts() {
                       src={part.image} 
                       alt={part.partname} 
                       className="w-16 h-16 object-cover rounded border"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          const sibling = target.nextElementSibling as HTMLDivElement;
+                          target.style.display = 'none';
+                          if (sibling) sibling.style.display = 'flex';
+                        }}
                     />
                   ) : null}
                   
